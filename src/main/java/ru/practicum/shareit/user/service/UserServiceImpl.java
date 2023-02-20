@@ -61,8 +61,10 @@ public class UserServiceImpl implements UserService {
         }
         if (userFields.containsKey("email")) {
             String email = user.getEmail();
-            checkSameEmail(email);
-            updatingUser.setEmail(user.getEmail());
+            if (!updatingUser.getEmail().equals(email)) {
+                checkSameEmail(email);
+            }
+            updatingUser.setEmail(email);
         }
 
         log.info("Обновлена информация о пользователе " + updatingUser);
