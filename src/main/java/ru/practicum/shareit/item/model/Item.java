@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
@@ -9,21 +10,22 @@ import javax.validation.constraints.NotBlank;
 
 @Data
 @AllArgsConstructor
+@FieldDefaults(makeFinal = false)
 public class Item {
 
-    private long id;
+    long id;
 
     @NotBlank
-    private String name;
+    String name;
 
     @NotBlank
-    private String description;
+    String description;
 
     @NotBlank
-    private Boolean available;
+    Boolean available;
 
     @NotBlank
-    private User owner;
+    User owner;
 
-    private ItemRequest request;
+    ItemRequest request;
 }

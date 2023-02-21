@@ -25,8 +25,10 @@ public class ItemController {
     private final UserService userService;
     private final Mapper mapper;
 
+    private static final String HEADER_NAME = "X-Sharer-User-Id";
+
     @GetMapping
-    public List<ItemDto> getAllItems(@RequestHeader("X-Sharer-User-Id") long userId) {
+    public List<ItemDto> getAllItems(@RequestHeader(HEADER_NAME) long userId) {
         return itemService.getOwnerItems(userId)
                 .stream()
                 .map(mapper::toDto)
@@ -40,7 +42,7 @@ public class ItemController {
     }
 
     @PostMapping
-    public ItemDto createItem(@RequestHeader("X-Sharer-User-Id") long userId,
+    public ItemDto createItem(@RequestHeader(HEADER_NAME) long userId,
                               @Valid @RequestBody ItemDto itemDto) {
         User user = userService.getUserById(userId);
         Item item = mapper.toItem(user, itemDto);
@@ -50,7 +52,7 @@ public class ItemController {
     }
 
     @PatchMapping("/{itemId}")
-    public ItemDto updateItem(@RequestHeader("X-Sharer-User-Id") long userId,
+    public ItemDto updateItem(@RequestHeader(HEADER_NAME) long userId,
                               @PathVariable long itemId,
                               @RequestBody ItemDto itemDto) {
         long itemOwnerId = itemService.getItemById(itemId).getOwner().getId();

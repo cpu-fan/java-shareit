@@ -43,7 +43,7 @@ public class UserController {
 
     @PatchMapping("/{userId}")
     public UserDto update(@Valid @PathVariable long userId,
-                       @RequestBody UserDto userDto) {
+                          @RequestBody UserDto userDto) {
         User user = mapper.toUser(userDto);
         user = userService.updateUser(userId, user);
         userDto = mapper.toDto(user);

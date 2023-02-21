@@ -2,22 +2,24 @@ package ru.practicum.shareit.item.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 @Data
 @AllArgsConstructor
+@FieldDefaults(makeFinal = false)
 public class ItemDto {
 
-    private long id;
+    long id;
 
     @NotBlank
-    private String name;
+    String name;
 
     @NotBlank
-    private String description;
+    String description;
 
     @NotNull
-    private Boolean available;
+    Boolean available;
 }
