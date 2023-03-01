@@ -1,4 +1,4 @@
-package ru.practicum.shareit.item.dao;
+package ru.practicum.shareit.item.dao.inmemory;
 
 import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.item.model.Item;
@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Repository
-public class ItemRepositoryInMemImpl implements ItemRepository {
+public class ItemRepositoryInMemImpl implements ItemRepositoryImMemory {
 
     private final Map<Long, Item> itemMap = new HashMap<>();
     private static long id = 0;

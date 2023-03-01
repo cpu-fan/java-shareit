@@ -6,12 +6,13 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exceptions.EmailAlreadyExistsException;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.mapper.Mapper;
-import ru.practicum.shareit.user.dao.UserRepositoryInMemImpl;
+import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,30 +20,30 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-    private final UserRepositoryInMemImpl userRepository;
+    private final UserRepository userRepository;
 
     @Override
     public List<User> getAllUsers() {
         log.info("Запрошен список пользователей");
-        return new ArrayList<>(userRepository.findAll().values());
+        return new ArrayList<>(userRepository.findAll());
     }
 
     @Override
     public User getUserById(long userId) {
-        User user = userRepository.findById(userId);
-        if (user == null) {
+        Optional<User> user = userRepository.findById(userId);
+        if (user.isEmpty()) {
             String message = "Пользователь с id = " + userId + " не найден";
             log.error(message);
             throw new NotFoundException(message);
         }
         log.info("Запрошен пользователь с id = " + userId);
-        return user;
+        return user.get();
     }
 
     @Override
     public User createUser(User user) {
         checkSameEmail(user.getEmail());
-        user = userRepository.create(user);
+        user = userRepository.save(user);
         log.info("Зарегистрирован новый пользователь " + user);
         return user;
     }
@@ -68,18 +69,18 @@ public class UserServiceImpl implements UserService {
         }
 
         log.info("Обновлена информация о пользователе " + updatingUser);
-        return userRepository.update(userId, updatingUser);
+        return userRepository.save(updatingUser);
     }
 
     @Override
     public void deleteUser(long userId) {
         getUserById(userId);
-        userRepository.delete(userId);
+        userRepository.deleteById(userId);
         log.info("Удален пользователь id = " + userId);
     }
 
     private List<String> getUserEmails() {
-        return userRepository.findAll().values().stream()
+        return userRepository.findAll().stream()
                 .map(User::getEmail)
                 .collect(Collectors.toList());
     }

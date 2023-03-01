@@ -11,6 +11,7 @@ import ru.practicum.shareit.mapper.Mapper;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -24,7 +25,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<Item> getOwnerItems(long userId) {
-        return itemRepository.findAll().values()
+        return itemRepository.findAll()
                 .stream()
                 .filter(i -> i.getOwner().getId() == userId)
                 .collect(Collectors.toList());
@@ -32,18 +33,18 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Item getItemById(long itemId) {
-        Item item = itemRepository.findById(itemId);
-        if (item == null) {
+        Optional<Item> item = itemRepository.findById(itemId);
+        if (item.isEmpty()) {
             String message = "Вещь с id = " + itemId + " не найдена";
             log.error(message);
             throw new NotFoundException(message);
         }
-        return item;
+        return item.get();
     }
 
     @Override
     public Item createItem(Item item) {
-        item = itemRepository.create(item);
+        item = itemRepository.save(item);
         log.info("Добавлена новая вещь " + item);
         return item;
     }
@@ -68,7 +69,7 @@ public class ItemServiceImpl implements ItemService {
         }
 
         log.info("Обновлена информация о вещи " + updatingItem);
-        return updatingItem;
+        return itemRepository.save(updatingItem);
     }
 
     @Override
@@ -83,7 +84,7 @@ public class ItemServiceImpl implements ItemService {
         Predicate<Item> descriptionPredicate = n -> pattern.matcher(n.getDescription()).find();
 
         log.info("Запрошен поиск по строке: " + text.toLowerCase());
-        return itemRepository.findAll().values()
+        return itemRepository.findAll()
                 .stream()
                 .filter(namePredicate.or(descriptionPredicate))
                 .filter(Item::getAvailable)
