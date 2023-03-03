@@ -12,8 +12,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -78,16 +76,6 @@ public class ItemServiceImpl implements ItemService {
             log.info("Для поиска передана пустая строка");
             return Collections.emptyList();
         }
-
-        Pattern pattern = Pattern.compile(text, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
-        Predicate<Item> namePredicate = n -> pattern.matcher(n.getName()).find();
-        Predicate<Item> descriptionPredicate = n -> pattern.matcher(n.getDescription()).find();
-
-        log.info("Запрошен поиск по строке: " + text.toLowerCase());
-        return itemRepository.findAll()
-                .stream()
-                .filter(namePredicate.or(descriptionPredicate))
-                .filter(Item::getAvailable)
-                .collect(Collectors.toList());
+        return itemRepository.search("%" + text + "%");
     }
 }
