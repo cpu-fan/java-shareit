@@ -3,7 +3,6 @@ package ru.practicum.shareit.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exceptions.EmailAlreadyExistsException;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.user.dao.UserRepository;
@@ -13,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +40,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User createUser(User user) {
-        checkSameEmail(user.getEmail());
+//        checkSameEmail(user.getEmail());
         user = userRepository.save(user);
         log.info("Зарегистрирован новый пользователь " + user);
         return user;
@@ -61,11 +59,7 @@ public class UserServiceImpl implements UserService {
             updatingUser.setName(user.getName());
         }
         if (userFields.containsKey("email")) {
-            String email = user.getEmail();
-            if (!updatingUser.getEmail().equals(email)) {
-                checkSameEmail(email);
-            }
-            updatingUser.setEmail(email);
+            updatingUser.setEmail(user.getEmail());
         }
 
         log.info("Обновлена информация о пользователе " + updatingUser);
@@ -77,19 +71,5 @@ public class UserServiceImpl implements UserService {
         getUserById(userId);
         userRepository.deleteById(userId);
         log.info("Удален пользователь id = " + userId);
-    }
-
-    private List<String> getUserEmails() {
-        return userRepository.findAll().stream()
-                .map(User::getEmail)
-                .collect(Collectors.toList());
-    }
-
-    private void checkSameEmail(String email) {
-        if (getUserEmails().contains(email)) {
-            String message = "Аккаунт с почтой " + email + " уже зарегистрирован";
-            log.error(message);
-            throw new EmailAlreadyExistsException(message);
-        }
     }
 }
