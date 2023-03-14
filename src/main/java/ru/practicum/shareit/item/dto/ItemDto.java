@@ -2,27 +2,25 @@ package ru.practicum.shareit.item.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.experimental.FieldDefaults;
 import ru.practicum.shareit.booking.dto.BookingIdBookerIdDto;
 
 import java.util.List;
 
 @Data
 @AllArgsConstructor
-@FieldDefaults(makeFinal = false)
 public class ItemDto {
 
-    long id;
+    private long id;
 
-    String name;
+    private String name;
 
-    String description;
+    private String description;
 
-    Boolean available;
+    private Boolean available;
 
-    BookingIdBookerIdDto lastBooking;
+    private BookingIdBookerIdDto lastBooking;
 
-    BookingIdBookerIdDto nextBooking;
+    private BookingIdBookerIdDto nextBooking;
 
-    List<CommentDto> comments;
+    private List<CommentDto> comments;
 }

@@ -40,7 +40,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User createUser(User user) {
-//        checkSameEmail(user.getEmail());
         user = userRepository.save(user);
         log.info("Зарегистрирован новый пользователь " + user);
         return user;

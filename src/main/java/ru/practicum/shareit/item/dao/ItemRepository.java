@@ -10,8 +10,10 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     @Query(value = "select * " +
             "from items i " +
-            "where i.name ilike ?1 " +
-            "or i.description ilike ?1 " +
+            "where (i.name ilike ?1 " +
+            "or i.description ilike ?1) " +
             "and is_available is true", nativeQuery = true)
     List<Item> search(String text);
+
+    List<Item> findByOwnerId(long ownerId);
 }
