@@ -57,8 +57,9 @@ public class BookingServiceImpl implements BookingService {
             log.error(message);
             throw new ValidationException(message);
         }
-        if (bookingDto.getEnd().isBefore(bookingDto.getStart())) {
-            String message = "Окончание бронирования не может быть раньше его начала";
+        if (bookingDto.getEnd().isBefore(bookingDto.getStart())
+                || bookingDto.getStart().equals(bookingDto.getEnd())) {
+            String message = "Окончание бронирования не может быть раньше или равно его началу";
             log.error(message);
             throw new ValidationException(message);
         }
@@ -134,6 +135,7 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingDto> getAllBookingsByUser(long userId, BookingState state, boolean isOwner) {
         userService.getUserById(userId); // если такого юзера нет, то 404
         List<Booking> bookings;
+        Comparator<Booking> comparator = Comparator.comparing(Booking::getStart).reversed();
 
         if (isOwner) {
             bookings = bookingRepository.findByOwnerId(userId);
@@ -150,20 +152,22 @@ public class BookingServiceImpl implements BookingService {
             case REJECTED:
                 String strState = state.toString();
                 Predicate<Booking> statusPredicate = b -> b.getStatus().toString().equals(strState);
-                return getFilteredAndSortBookings(bookings, statusPredicate);
+                return getFilteredAndSortBookings(bookings, statusPredicate, comparator);
 
             case PAST:
                 Predicate<Booking> pastPredicate = b -> b.getEnd().isBefore(LocalDateTime.now());
-                return getFilteredAndSortBookings(bookings, pastPredicate);
+                return getFilteredAndSortBookings(bookings, pastPredicate, comparator);
 
             case CURRENT:
                 Predicate<Booking> currentPredicate = b -> b.getStart().isBefore(LocalDateTime.now())
                         && b.getEnd().isAfter(LocalDateTime.now());
-                return getFilteredAndSortBookings(bookings, currentPredicate);
+                Comparator<Booking> comparator2 = Comparator.comparing(Booking::getId);
+//                comparator = comparator.reversed();
+                return getFilteredAndSortBookings(bookings, currentPredicate, comparator2);
 
             case FUTURE:
                 Predicate<Booking> futurePredicate = b -> b.getStart().isAfter(LocalDateTime.now());
-                return getFilteredAndSortBookings(bookings, futurePredicate);
+                return getFilteredAndSortBookings(bookings, futurePredicate, comparator);
 
             case ALL:
                 return bookings.stream()
@@ -205,10 +209,13 @@ public class BookingServiceImpl implements BookingService {
         return start1.isBefore(end2) && start2.isBefore(end1);
     }
 
-    List<BookingDto> getFilteredAndSortBookings(List<Booking> list, Predicate<Booking> predicate) {
+    private List<BookingDto> getFilteredAndSortBookings(List<Booking> list,
+                                                        Predicate<Booking> predicate,
+                                                        Comparator<Booking> comparator) {
         return list.stream()
                 .filter(predicate)
-                .sorted(Comparator.comparing(Booking::getStart).reversed())
+                .sorted(comparator)
+//                .sorted(Comparator.comparing(Booking::getStart).reversed())
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
     }

@@ -177,7 +177,8 @@ public class ItemServiceImpl implements ItemService {
 
         BookingIdBookerIdDto lastBooking = bookings
                 .stream()
-                .filter(b -> b.getEnd().isBefore(LocalDateTime.now()))
+                .filter(b -> b.getEnd().isBefore(LocalDateTime.now())
+                        || b.getStart().isBefore(LocalDateTime.now()))
                 .sorted(Comparator.comparing(Booking::getStart).reversed())
                 .map(mapper::toBookingIdBookerIdDto)
                 .findFirst()
