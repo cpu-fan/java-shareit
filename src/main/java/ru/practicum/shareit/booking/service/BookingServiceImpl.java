@@ -15,6 +15,7 @@ import ru.practicum.shareit.exceptions.ValidationException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.mapper.Mapper;
+import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
@@ -34,13 +35,19 @@ public class BookingServiceImpl implements BookingService {
 
     private final ItemRepository itemRepository;
 
+    private final UserRepository userRepository;
+
     private final UserService userService;
 
     private final Mapper mapper;
 
     @Override
     public BookingDto createBooking(long userId, BookingCreationDto bookingDto) {
-        User user = userService.getUserById(userId);
+        User user = userRepository.findById(userId).orElseThrow(() -> {
+            String message = "Пользователь с id = " + userId + " не найден";
+            log.error(message);
+            throw new NotFoundException(message);
+        });
         Item item = itemRepository.findById(bookingDto.getItemId()).orElseThrow(() -> {
             String message = "Вещь itemId = " + bookingDto.getItemId() + " не найдена";
             log.error(message);

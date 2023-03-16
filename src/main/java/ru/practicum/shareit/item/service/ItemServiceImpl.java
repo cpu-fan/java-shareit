@@ -21,7 +21,6 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -36,8 +35,6 @@ public class ItemServiceImpl implements ItemService {
 
     private final BookingRepository bookingRepository;
 
-    private final UserService userService;
-
     private final CommentRepository commentRepository;
 
     private final Mapper mapper;
@@ -50,13 +47,14 @@ public class ItemServiceImpl implements ItemService {
 
         List<Item> items = itemRepository.findByOwnerId(userId);
 
-        List<Comment> comments = commentRepository.findByItemsId(items.stream()
+        Map<Long, List<Comment>> comments = commentRepository.findByItemsId(items.stream()
                 .map(Item::getId)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList())).stream()
+                .collect(Collectors.groupingBy(c -> c.getItem().getId(),
+                        Collectors.mapping(c -> c, Collectors.toList())));
 
         return items.stream()
-                .map(i -> getItemWithBookings(i, comments.stream()
-                        .filter(c -> c.getItem().getId() == i.getId())
+                .map(i -> getItemWithBookings(i, comments.getOrDefault(i.getId(), Collections.emptyList()).stream()
                         .map(mapper::toDto)
                         .collect(Collectors.toList())))
                 .sorted(Comparator.comparing(ItemDto::getId))
@@ -86,7 +84,11 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemCreationDto createItem(long userId, ItemCreationDto itemDto) {
-        User user = userService.getUserById(userId);
+        User user = userRepository.findById(userId).orElseThrow(() -> {
+            String message = "Пользователь с id = " + userId + " не найден";
+            log.error(message);
+            throw new NotFoundException(message);
+        });
         Item item = mapper.toItem(user, itemDto);
         item = itemRepository.save(item);
         log.info("Добавлена новая вещь " + item);
@@ -95,7 +97,11 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemCreationDto updateItem(long userId, long itemId, ItemCreationDto itemDto) {
-        User user = userService.getUserById(userId);
+        User user = userRepository.findById(userId).orElseThrow(() -> {
+            String message = "Пользователь с id = " + userId + " не найден";
+            log.error(message);
+            throw new NotFoundException(message);
+        });
         Item item = mapper.toItem(user, itemDto);
 
         Optional<Item> updatingItem = itemRepository.findById(itemId);
@@ -138,7 +144,7 @@ public class ItemServiceImpl implements ItemService {
             return Collections.emptyList();
         }
         log.info("Поиск вещи по запросу: \"" + text + "\"");
-        List<Item> items = itemRepository.search("%" + text + "%");
+        List<Item> items = itemRepository.search(text);
         return items.stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
