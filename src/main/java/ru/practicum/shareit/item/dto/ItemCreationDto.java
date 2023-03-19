@@ -1,14 +1,14 @@
-package ru.practicum.shareit.user.dto;
+package ru.practicum.shareit.item.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 @Data
 @AllArgsConstructor
-public class UserDto {
+public class ItemCreationDto {
 
     private long id;
 
@@ -16,6 +16,8 @@ public class UserDto {
     private String name;
 
     @NotBlank
-    @Email
-    private String email;
+    private String description;
+
+    @NotNull
+    private Boolean available;
 }

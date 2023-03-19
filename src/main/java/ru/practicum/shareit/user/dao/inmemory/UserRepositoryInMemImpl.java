@@ -1,20 +1,22 @@
-package ru.practicum.shareit.user.dao;
+package ru.practicum.shareit.user.dao.inmemory;
 
 import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.user.model.User;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-@Repository
-public class UserRepositoryInMemImpl implements UserRepository {
+@Repository("UserRepositoryInMemImpl")
+public class UserRepositoryInMemImpl implements UserRepositoryImMemory {
 
     private final Map<Long, User> userMap = new HashMap<>();
     private static long id = 0;
 
     @Override
-    public Map<Long, User> findAll() {
-        return userMap;
+    public List<User> findAll() {
+        return new ArrayList<>(userMap.values());
     }
 
     @Override
@@ -42,4 +44,5 @@ public class UserRepositoryInMemImpl implements UserRepository {
     private long generateId() {
         return ++id;
     }
+
 }
