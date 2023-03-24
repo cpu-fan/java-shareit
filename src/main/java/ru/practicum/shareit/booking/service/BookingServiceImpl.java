@@ -2,6 +2,9 @@ package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingCreationDto;
@@ -20,7 +23,6 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -139,15 +141,15 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getAllBookingsByUser(long userId, BookingState state, boolean isOwner) {
-        userService.getUserById(userId); // если такого юзера нет, то 404
+    public List<BookingDto> getAllBookingsByUser(long userId, BookingState state, int from, int size, boolean isOwner) {
+        userService.getUserById(userId);
         List<Booking> bookings;
-        Comparator<Booking> comparator = Comparator.comparing(Booking::getStart).reversed();
+        Pageable pageable = PageRequest.of(from / size, size, Sort.by("start").descending());
 
         if (isOwner) {
-            bookings = bookingRepository.findByOwnerId(userId);
+            bookings = bookingRepository.findByOwnerId(userId, pageable);
         } else {
-            bookings = bookingRepository.findByBookerId(userId);
+            bookings = bookingRepository.findByBookerId(userId, pageable);
         }
 
         if (state == null) {
@@ -159,26 +161,23 @@ public class BookingServiceImpl implements BookingService {
             case REJECTED:
                 String strState = state.toString();
                 Predicate<Booking> statusPredicate = b -> b.getStatus().toString().equals(strState);
-                return getFilteredAndSortBookings(bookings, statusPredicate, comparator);
+                return getFilteredAndSortBookings(bookings, statusPredicate);
 
             case PAST:
                 Predicate<Booking> pastPredicate = b -> b.getEnd().isBefore(LocalDateTime.now());
-                return getFilteredAndSortBookings(bookings, pastPredicate, comparator);
+                return getFilteredAndSortBookings(bookings, pastPredicate);
 
             case CURRENT:
                 Predicate<Booking> currentPredicate = b -> b.getStart().isBefore(LocalDateTime.now())
                         && b.getEnd().isAfter(LocalDateTime.now());
-                Comparator<Booking> comparator2 = Comparator.comparing(Booking::getId);
-//                comparator = comparator.reversed();
-                return getFilteredAndSortBookings(bookings, currentPredicate, comparator2);
+                return getFilteredAndSortBookings(bookings, currentPredicate);
 
             case FUTURE:
                 Predicate<Booking> futurePredicate = b -> b.getStart().isAfter(LocalDateTime.now());
-                return getFilteredAndSortBookings(bookings, futurePredicate, comparator);
+                return getFilteredAndSortBookings(bookings, futurePredicate);
 
             case ALL:
                 return bookings.stream()
-                        .sorted(Comparator.comparing(Booking::getStart).reversed())
                         .map(mapper::toDto)
                         .collect(Collectors.toList());
 
@@ -216,13 +215,9 @@ public class BookingServiceImpl implements BookingService {
         return start1.isBefore(end2) && start2.isBefore(end1);
     }
 
-    private List<BookingDto> getFilteredAndSortBookings(List<Booking> list,
-                                                        Predicate<Booking> predicate,
-                                                        Comparator<Booking> comparator) {
+    private List<BookingDto> getFilteredAndSortBookings(List<Booking> list, Predicate<Booking> predicate) {
         return list.stream()
                 .filter(predicate)
-                .sorted(comparator)
-//                .sorted(Comparator.comparing(Booking::getStart).reversed())
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
     }

@@ -10,6 +10,10 @@ import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.item.dto.*;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.dto.ItemRequestCreatedDto;
+import ru.practicum.shareit.request.dto.ItemRequestCreationDto;
+import ru.practicum.shareit.request.dto.ItemRequestDto;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserIdDto;
 import ru.practicum.shareit.user.model.User;
@@ -23,23 +27,26 @@ import java.util.stream.Collectors;
 public class Mapper {
 
     public ItemCreationDto toDto(Item item) {
-        // Можно ли по code style большие конструкторы таким образом собирать?
-        // Выглядит вроде нагляднее... (решил попробовать в этом проекте без @Builder обойтись)
-        return new ItemCreationDto(
+        ItemCreationDto itemCreationDto = new ItemCreationDto(
                 item.getId(),
                 item.getName(),
                 item.getDescription(),
                 item.getAvailable()
         );
+        if (item.getRequest() != null) {
+            itemCreationDto.setRequestId(item.getRequest().getId());
+        }
+        return itemCreationDto;
     }
 
-    public Item toItem(User user, ItemCreationDto itemDto) {
+    public Item toItem(ItemCreationDto itemDto, User user) {
         return new Item(
                 itemDto.getId(),
                 itemDto.getName(),
                 itemDto.getDescription(),
                 itemDto.getAvailable(),
-                user, null
+                user,
+                null
         );
     }
 
@@ -55,6 +62,16 @@ public class Mapper {
                 lastBooking,
                 nextBooking,
                 comments
+        );
+    }
+
+    public ItemDtoForRequest toItemDtoForReq(Item item) {
+        return new ItemDtoForRequest(
+                item.getId(),
+                item.getName(),
+                item.getDescription(),
+                item.getAvailable(),
+                item.getRequest().getId()
         );
     }
 
@@ -124,6 +141,32 @@ public class Mapper {
                 comment.getText(),
                 comment.getAuthor().getName(),
                 comment.getCreated()
+        );
+    }
+
+    public ItemRequest toItemRequest(User requestor, ItemRequestCreationDto itemRequestDto) {
+        return new ItemRequest(
+                0,
+                itemRequestDto.getDescription(),
+                requestor,
+                LocalDateTime.now()
+        );
+    }
+
+    public ItemRequestCreatedDto toDto(ItemRequest itemRequest) {
+        return new ItemRequestCreatedDto(
+                itemRequest.getId(),
+                itemRequest.getDescription(),
+                itemRequest.getCreated()
+        );
+    }
+
+    public ItemRequestDto toItemRequestDto(ItemRequest itemRequest, List<ItemDtoForRequest> items) {
+        return new ItemRequestDto(
+                itemRequest.getId(),
+                itemRequest.getDescription(),
+                itemRequest.getCreated(),
+                items
         );
     }
 
