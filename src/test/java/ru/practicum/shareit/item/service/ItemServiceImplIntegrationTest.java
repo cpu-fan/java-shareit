@@ -8,6 +8,7 @@ import org.springframework.test.context.jdbc.Sql;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.exceptions.ForbiddenException;
 import ru.practicum.shareit.item.dao.CommentRepository;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.CommentDto;
@@ -24,8 +25,7 @@ import ru.practicum.shareit.user.model.User;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Sql(scripts = "/schema.sql")
@@ -184,6 +184,11 @@ class ItemServiceImplIntegrationTest {
 
         assertEquals(false, actualItemCreationDto.getAvailable());
         assertEquals(1, actualItemCreationDto.getId());
+    }
+
+    @Test
+    void updateItem_whenUserIdIsOwner_thenReturnForbiddenException() {
+        assertThrows(ForbiddenException.class, () -> itemService.updateItem(user.getId(), item.getId(), itemCreationDto));
     }
 
     @Test
