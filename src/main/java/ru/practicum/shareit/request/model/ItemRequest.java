@@ -27,6 +27,4 @@ public class ItemRequest {
     private User requestor;
 
     private LocalDateTime created;
-
-//    private List<Item> items;
 }

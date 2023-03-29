@@ -27,7 +27,10 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -69,12 +72,11 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto getItemById(long userId, long itemId) {
-        Optional<Item> item = itemRepository.findById(itemId);
-        if (item.isEmpty()) {
+        Item item = itemRepository.findById(itemId).orElseThrow(() -> {
             String message = "Вещь с itemId = " + itemId + " не найдена";
             log.error(message);
             throw new NotFoundException(message);
-        }
+        });
 
         List<CommentDto> comments = commentRepository.findByItemId(itemId).stream()
                 .map(mapper::toDto)
@@ -82,10 +84,10 @@ public class ItemServiceImpl implements ItemService {
 
         log.info("Запрошена вещь с itemId = " + itemId);
 
-        if (item.get().getOwner().getId() == userId) {
-            return getItemWithBookings(item.get(), comments);
+        if (item.getOwner().getId() == userId) {
+            return getItemWithBookings(item, comments);
         }
-        return mapper.toDto(item.get(), null, null, comments);
+        return mapper.toDto(item, null, null, comments);
     }
 
     @Override
@@ -110,36 +112,33 @@ public class ItemServiceImpl implements ItemService {
             setItemRequest(item, requestId);
         }
 
-        Optional<Item> updatingItem = itemRepository.findById(itemId);
-        if (updatingItem.isEmpty()) {
+        Item updatingItem = itemRepository.findById(itemId).orElseThrow(() -> {
             String message = "Вещь с itemId = " + itemId + " не найдена";
             log.error(message);
             throw new NotFoundException(message);
-        }
+        });
 
-        long itemOwnerId = updatingItem.get().getOwner().getId();
+        long itemOwnerId = updatingItem.getOwner().getId();
         if (userId != itemOwnerId) {
             log.error("Пользователь id = " + userId + " не имеет доступа к редактированию вещи id = " + itemId);
             throw new ForbiddenException("Access Denied");
         }
 
         // Конвертирую Item в Map и отбираю только те поля-ключи, значение у которых != null
-        Mapper mapper = new Mapper();
         Map<String, Object> itemFields = mapper.toMap(item);
-
         // Далее обновляю необходимые значения полей у существующего объекта
         if (itemFields.containsKey("name")) {
-            updatingItem.get().setName(item.getName());
+            updatingItem.setName(item.getName());
         }
         if (itemFields.containsKey("description")) {
-            updatingItem.get().setDescription(item.getDescription());
+            updatingItem.setDescription(item.getDescription());
         }
         if (itemFields.containsKey("available")) {
-            updatingItem.get().setAvailable(item.getAvailable());
+            updatingItem.setAvailable(item.getAvailable());
         }
 
         log.info("Обновлена информация о вещи " + updatingItem);
-        item = itemRepository.save(updatingItem.get());
+        item = itemRepository.save(updatingItem);
         return mapper.toDto(item);
     }
 
@@ -158,14 +157,12 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public CommentDto addComment(long userId,  long itemId, CommentTextDto commentDto) {
+        User author = mapper.toUser(userService.getUserById(userId));
         Item item = itemRepository.findById(itemId).orElseThrow(() -> {
             String message = "Вещь itemId = " + itemId + " не найдена";
             log.error(message);
             throw new NotFoundException(message);
         });
-        User author = mapper.toUser(userService.getUserById(userId));
-
-        Comment newComment = mapper.toComment(commentDto, item, author);
 
         List<Booking> bookings = bookingRepository.findByItemIdAndBookerIdAndStatusAndEndBefore(itemId, userId,
                 BookingStatus.APPROVED, LocalDateTime.now());
@@ -176,6 +173,7 @@ public class ItemServiceImpl implements ItemService {
             throw new ValidationException(message);
         }
 
+        Comment newComment = mapper.toComment(commentDto, item, author);
         newComment =  commentRepository.save(newComment);
         return mapper.toDto(newComment);
     }

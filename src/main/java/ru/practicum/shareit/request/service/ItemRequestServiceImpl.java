@@ -54,8 +54,8 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     }
 
     @Override
-    public ItemRequestDto getRequestById(long requestorId, long requestId) {
-        userService.getUserById(requestorId);
+    public ItemRequestDto getRequestById(long userId, long requestId) {
+        userService.getUserById(userId);
         ItemRequest itemRequest = itemRequestRepository.findById(requestId).orElseThrow(() -> {
             String message = "Запрос requestId " + requestId + " не найден";
             log.error(message);

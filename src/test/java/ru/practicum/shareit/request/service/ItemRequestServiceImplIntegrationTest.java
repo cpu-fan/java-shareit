@@ -2,57 +2,95 @@ package ru.practicum.shareit.request.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
-import ru.practicum.shareit.mapper.Mapper;
+import org.springframework.test.context.jdbc.Sql;
+import ru.practicum.shareit.item.dao.ItemRepository;
+import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.request.dto.ItemRequestCreatedDto;
 import ru.practicum.shareit.request.dto.ItemRequestCreationDto;
+import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
 
-import javax.transaction.Transactional;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@Transactional
 @SpringBootTest
-@TestPropertySource(locations = "classpath:application-test.properties")
+@Sql(scripts = "/schema.sql")
 class ItemRequestServiceImplIntegrationTest {
 
     @Autowired
     private ItemRequestServiceImpl itemRequestService;
 
     @Autowired
+    private ItemRequestRepository itemRequestRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
-    @Mock
-    private Mapper mapper;
+    @Autowired
+    private ItemRepository itemRepository;
 
-    private final User requestor = new User(0, "test-user", "test@email.com");
+    private User requestor;
+    private User user;
+    private ItemRequest ir;
+    private ItemRequestCreationDto itemRequestCreationDto;
 
     @BeforeEach
     void setUp() {
+        User owner = new User(1, "owner", "ItemRequestServiceImplIntegrationTest@owner.com");
+        requestor = new User(2, "requestor", "ItemRequestServiceImplIntegrationTest@requestor.com");
+        user = new User(3, "user", "ItemRequestServiceImplIntegrationTest@user.com");
+        ir = new ItemRequest(1, "desc", requestor, LocalDateTime.now());
+        itemRequestCreationDto = new ItemRequestCreationDto(ir.getDescription());
+        Item item = new Item(1, "name", "desc", true, owner, ir);
+
+        userRepository.save(owner);
         userRepository.save(requestor);
+        userRepository.save(user);
+        itemRequestRepository.save(ir);
+        itemRepository.save(item);
     }
 
     @Test
-    void addRequest_whenRequestorFound_thenReturnRequest() {
-        long requestorId = 1;
-        ItemRequestCreationDto itemRequestDto = new ItemRequestCreationDto("test description");
-        ItemRequest itemRequest = new ItemRequest(0, itemRequestDto.getDescription(),
-                requestor, LocalDateTime.now());
+    void addRequest() {
+        ItemRequestCreatedDto actualItemRequestCreatedDto = itemRequestService.addRequest(requestor.getId(),
+                itemRequestCreationDto);
 
-        when(mapper.toItemRequest(requestor, itemRequestDto)).thenReturn(itemRequest);
+        assertEquals(2, actualItemRequestCreatedDto.getId());
+        assertEquals(ir.getDescription(), actualItemRequestCreatedDto.getDescription());
+    }
 
-        ItemRequestCreatedDto actualItemRequestDto = itemRequestService.addRequest(requestorId, itemRequestDto);
-        ItemRequestCreatedDto expectedItemRequestDto = new ItemRequestCreatedDto(1, itemRequestDto.getDescription(),
-                actualItemRequestDto.getCreated());
+    @Test
+    void getListOwnRequests() {
+        List<ItemRequestDto> actualItemRequestDto = itemRequestService.getListOwnRequests(requestor.getId());
 
-        assertEquals(expectedItemRequestDto, actualItemRequestDto);
+        assertEquals(1, actualItemRequestDto.get(0).getId());
+        assertEquals(ir.getDescription(), actualItemRequestDto.get(0).getDescription());
+        assertFalse(actualItemRequestDto.get(0).getItems().isEmpty());
+    }
+
+    @Test
+    void getRequestById() {
+        ItemRequestDto actualItemRequestDto = itemRequestService.getRequestById(user.getId(), ir.getId());
+
+        assertEquals(1, actualItemRequestDto.getId());
+        assertEquals(ir.getDescription(), actualItemRequestDto.getDescription());
+        assertFalse(actualItemRequestDto.getItems().isEmpty());
+    }
+
+    @Test
+    void getRequestsList() {
+        List<ItemRequestDto> actualItemRequestDto = itemRequestService.getRequestsList(user.getId(), 0,10);
+
+        assertEquals(1, actualItemRequestDto.get(0).getId());
+        assertEquals(ir.getDescription(), actualItemRequestDto.get(0).getDescription());
+        assertFalse(actualItemRequestDto.get(0).getItems().isEmpty());
     }
 }

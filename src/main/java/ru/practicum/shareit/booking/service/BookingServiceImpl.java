@@ -24,7 +24,6 @@ import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -121,15 +120,14 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto getBookingById(long userId, long bookingId) {
-        Optional<Booking> booking = bookingRepository.findById(bookingId);
-        if (booking.isEmpty()) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> {
             String message = "Бронирование bookingId = " + bookingId + " не найдено";
             log.error(message);
             throw new NotFoundException(message);
-        }
+        });
 
-        long bookerId = booking.get().getBooker().getId();
-        long ownerId = booking.get().getItem().getOwner().getId();
+        long bookerId = booking.getBooker().getId();
+        long ownerId = booking.getItem().getOwner().getId();
         if (!(userId == bookerId || userId == ownerId)) {
             String message = "У пользователя userId = " + userId + " не найдено бронирования bookingId = " + bookingId;
             log.error(message);
@@ -137,7 +135,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         log.info("Запрошено бронирование bookingId = " + bookingId);
-        return mapper.toDto(booking.get());
+        return mapper.toDto(booking);
     }
 
     @Override
@@ -192,7 +190,7 @@ public class BookingServiceImpl implements BookingService {
         long itemId = booking.getItemId();
         List<Booking> existingBookings = bookingRepository.findByItemId(itemId);
 
-        // Если бронирование имеется даты пересекаются, то выбрасываем ошибку
+        // Если бронирование имеется и даты пересекаются, то выбрасываем ошибку
         if (existingBookings != null) {
             LocalDateTime startNewBooking = booking.getStart();
             LocalDateTime endNewBooking = booking.getEnd();

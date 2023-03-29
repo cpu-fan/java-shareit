@@ -12,7 +12,6 @@ import ru.practicum.shareit.user.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,14 +33,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getUserById(long userId) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isEmpty()) {
+        User user = userRepository.findById(userId).orElseThrow(() -> {
             String message = "Пользователь с id = " + userId + " не найден";
             log.error(message);
             throw new NotFoundException(message);
-        }
+        });
         log.info("Запрошен пользователь с id = " + userId);
-        return mapper.toDto(user.get());
+        return mapper.toDto(user);
     }
 
     @Override
@@ -54,12 +52,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto updateUser(long userId, UserDto userDto) {
-        User user = mapper.toUser(userDto);
         User updatingUser = userRepository.findById(userId).orElseThrow(() -> {
             String message = "Пользователь с id = " + userId + " не найден";
             log.error(message);
             throw new NotFoundException(message);
         });
+        User user = mapper.toUser(userDto);
 
         // Конвертирую Item в Map и отбираю только те поля-ключи, значение у которых != null
         Mapper mapper = new Mapper();
@@ -84,12 +82,4 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(userId);
         log.info("Удален пользователь id = " + userId);
     }
-
-//    public void checkUser(long userId) {
-//        userRepository.findById(userId).orElseThrow(() -> {
-//            String message = "Пользователь userId = " + userId + " не найден";
-//            log.error(message);
-//            throw new NotFoundException(message);
-//        });
-//    }
 }
