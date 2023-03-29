@@ -33,8 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
@@ -330,7 +329,8 @@ class BookingServiceImplUnitTest {
 
         verify(mapper).toDto(bookingArgumentCaptor.capture());
         Booking actualBooking = bookingArgumentCaptor.getValue();
-        assert(actualBooking.getEnd().isBefore(LocalDateTime.now()));
+
+        assertTrue(actualBooking.getEnd().isBefore(LocalDateTime.now()));
     }
 
     @Test
@@ -346,8 +346,9 @@ class BookingServiceImplUnitTest {
 
         verify(mapper).toDto(bookingArgumentCaptor.capture());
         Booking actualBooking = bookingArgumentCaptor.getValue();
-        assert(actualBooking.getStart().isBefore(LocalDateTime.now()));
-        assert(actualBooking.getEnd().isAfter(LocalDateTime.now()));
+
+        assertTrue(actualBooking.getStart().isBefore(LocalDateTime.now()));
+        assertTrue(actualBooking.getEnd().isAfter(LocalDateTime.now()));
     }
 
     @Test
@@ -363,7 +364,8 @@ class BookingServiceImplUnitTest {
 
         verify(mapper).toDto(bookingArgumentCaptor.capture());
         Booking actualBooking = bookingArgumentCaptor.getValue();
-        assert(actualBooking.getStart().isAfter(LocalDateTime.now()));
+
+        assertTrue(actualBooking.getStart().isAfter(LocalDateTime.now()));
     }
 
     @Test
