@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingCreationDto;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.model.BookingStatus;
@@ -20,7 +21,6 @@ import ru.practicum.shareit.exceptions.ValidationException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemIdNameDto;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dto.UserDto;
@@ -43,22 +43,16 @@ class BookingServiceImplUnitTest {
 
     @InjectMocks
     private BookingServiceImpl bookingService;
-
     @Mock
     private BookingRepository bookingRepository;
-
     @Mock
     private ItemRepository itemRepository;
-
     @Mock
     private UserRepository userRepository;
-
     @Mock
     private UserService userService;
-
     @Mock
-    private Mapper mapper;
-
+    private BookingMapper mapper;
     @Captor
     ArgumentCaptor<Booking> bookingArgumentCaptor;
 

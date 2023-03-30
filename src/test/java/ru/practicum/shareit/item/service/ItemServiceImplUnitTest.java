@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingIdBookerIdDto;
+import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.exceptions.NotFoundException;
@@ -18,12 +19,14 @@ import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.CommentTextDto;
 import ru.practicum.shareit.item.dto.ItemCreationDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.mapper.CommentMapper;
+import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
@@ -46,7 +49,13 @@ class ItemServiceImplUnitTest {
     @Mock
     private CommentRepository commentRepository;
     @Mock
-    private Mapper mapper;
+    private ItemMapper itemMapper;
+    @Mock
+    private UserMapper userMapper;
+    @Mock
+    private BookingMapper bookingMapper;
+    @Mock
+    private CommentMapper commentMapper;
     @Mock
     private UserService userService;
     @Mock
@@ -89,11 +98,11 @@ class ItemServiceImplUnitTest {
 
         when(itemRepository.findByOwnerId(anyLong(), any(Pageable.class))).thenReturn(List.of(item));
         when(commentRepository.findByItemsId(anyList())).thenReturn(List.of(comment));
-        when(mapper.toDto(any(Comment.class))).thenReturn(commentDto);
+        when(commentMapper.toDto(any(Comment.class))).thenReturn(commentDto);
         when(bookingRepository.findByItemId(anyLong())).thenReturn(List.of(booking));
-        when(mapper.toBookingIdBookerIdDto(any())).thenReturn(lb);
-        when(mapper.toBookingIdBookerIdDto(any())).thenReturn(nb);
-        when(mapper.toDto(any(), any(), any(), anyList())).thenReturn(itemDto);
+        when(bookingMapper.toBookingIdBookerIdDto(any())).thenReturn(lb);
+        when(bookingMapper.toBookingIdBookerIdDto(any())).thenReturn(nb);
+        when(itemMapper.toDto(any(), any(), any(), anyList())).thenReturn(itemDto);
 
         List<ItemDto> actualItemsDto = itemService.getOwnerItems(1, 0, 10);
 
@@ -108,8 +117,8 @@ class ItemServiceImplUnitTest {
 
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
         when(commentRepository.findByItemId(anyLong())).thenReturn(List.of(comment));
-        when(mapper.toDto(any(Comment.class))).thenReturn(commentDto);
-        when(mapper.toDto(any(), any(), any(), anyList())).thenReturn(itemDto);
+        when(commentMapper.toDto(any(Comment.class))).thenReturn(commentDto);
+        when(itemMapper.toDto(any(), any(), any(), anyList())).thenReturn(itemDto);
 
         ItemDto actualItemDto = itemService.getItemById(2, 1);
 
@@ -122,8 +131,8 @@ class ItemServiceImplUnitTest {
     void getItemById_whenRequestedOwner_thenReturnWithBookingInfo() {
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
         when(commentRepository.findByItemId(anyLong())).thenReturn(List.of(comment));
-        when(mapper.toDto(any(Comment.class))).thenReturn(commentDto);
-        when(mapper.toDto(any(), any(), any(), anyList())).thenReturn(itemDto);
+        when(commentMapper.toDto(any(Comment.class))).thenReturn(commentDto);
+        when(itemMapper.toDto(any(), any(), any(), anyList())).thenReturn(itemDto);
 
         ItemDto actualItemDto = itemService.getItemById(1, 1);
 
@@ -141,17 +150,17 @@ class ItemServiceImplUnitTest {
         verify(commentRepository, never()).findByItemsId(anyList());
         verify(bookingRepository, never()).findByItemId(anyLong());
         verify(bookingRepository, never()).findByItemId(anyLong());
-        verify(mapper, never()).toBookingIdBookerIdDto(any());
-        verify(mapper, never()).toDto(any(), any(), any(), anyList());
+        verify(bookingMapper, never()).toBookingIdBookerIdDto(any());
+        verify(itemMapper, never()).toDto(any(), any(), any(), anyList());
     }
 
     @Test
     void createItem_whenUserFoundAndCreateWithoutRequestId_thenReturnItemWithoutRequestInfo() {
         when(userService.getUserById(anyLong())).thenReturn(userDto);
-        when(mapper.toUser(any())).thenReturn(user);
-        when(mapper.toItem(any(), any())).thenReturn(item);
+        when(userMapper.toUser(any())).thenReturn(user);
+        when(itemMapper.toItem(any(), any())).thenReturn(item);
         when(itemRepository.save(any())).thenReturn(item);
-        when(mapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
+        when(itemMapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
 
         ItemCreationDto actualItemCreationDto = itemService.createItem(user.getId(), itemCreationDto);
 
@@ -164,11 +173,11 @@ class ItemServiceImplUnitTest {
         itemCreationDto.setRequestId(1);
 
         when(userService.getUserById(anyLong())).thenReturn(userDto);
-        when(mapper.toUser(any())).thenReturn(user);
-        when(mapper.toItem(any(), any())).thenReturn(item);
+        when(userMapper.toUser(any())).thenReturn(user);
+        when(itemMapper.toItem(any(), any())).thenReturn(item);
         when(itemRequestRepository.findById(anyLong())).thenReturn(Optional.of(itemRequest));
         when(itemRepository.save(any())).thenReturn(item);
-        when(mapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
+        when(itemMapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
 
         ItemCreationDto actualItemCreationDto = itemService.createItem(user.getId(), itemCreationDto);
 
@@ -183,11 +192,11 @@ class ItemServiceImplUnitTest {
 
         assertThrows(NotFoundException.class, () -> itemService.createItem(user.getId(), itemCreationDto));
 
-        verify(mapper, never()).toUser(any());
-        verify(mapper, never()).toItem(any(), any());
+        verify(userMapper, never()).toUser(any());
+        verify(itemMapper, never()).toItem(any(), any());
         verify(itemRequestRepository, never()).findById(anyLong());
         verify(itemRepository, never()).save(any());
-        verify(mapper, never()).toDto(any(Item.class));
+        verify(itemMapper, never()).toDto(any(Item.class));
     }
 
     @Test
@@ -199,11 +208,11 @@ class ItemServiceImplUnitTest {
         assertThrows(NotFoundException.class, () -> itemService.createItem(user.getId(), itemCreationDto));
 
         verify(userService, times(1)).getUserById(anyLong());
-        verify(mapper, times(1)).toUser(any());
-        verify(mapper, times(1)).toItem(any(), any());
+        verify(userMapper, times(1)).toUser(any());
+        verify(itemMapper, times(1)).toItem(any(), any());
         verify(itemRequestRepository, times(1)).findById(anyLong());
         verify(itemRepository, never()).save(any());
-        verify(mapper, never()).toDto(any(Item.class));
+        verify(itemMapper, never()).toDto(any(Item.class));
     }
 
     @Test
@@ -215,12 +224,12 @@ class ItemServiceImplUnitTest {
         newItem.setName(nameItemCreationDto.getName());
 
         when(userService.getUserById(anyLong())).thenReturn(userDto);
-        when(mapper.toUser(any())).thenReturn(user);
-        when(mapper.toItem(any(), any())).thenReturn(newItem);
+        when(userMapper.toUser(any())).thenReturn(user);
+        when(itemMapper.toItem(any(), any())).thenReturn(newItem);
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
         itemCreationDto.setName(newItem.getName());
         when(itemRepository.save(any())).thenReturn(item);
-        when(mapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
+        when(itemMapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
 
         ItemCreationDto actualItemCreationDto = itemService.updateItem(1, 1, nameItemCreationDto);
 
@@ -236,12 +245,12 @@ class ItemServiceImplUnitTest {
         newItem.setDescription(itemCreationDto.getDescription());
 
         when(userService.getUserById(anyLong())).thenReturn(userDto);
-        when(mapper.toUser(any())).thenReturn(user);
-        when(mapper.toItem(any(), any())).thenReturn(newItem);
+        when(userMapper.toUser(any())).thenReturn(user);
+        when(itemMapper.toItem(any(), any())).thenReturn(newItem);
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
         itemCreationDto.setName(newItem.getName());
         when(itemRepository.save(any())).thenReturn(item);
-        when(mapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
+        when(itemMapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
 
         ItemCreationDto actualItemCreationDto = itemService.updateItem(1, 1, itemCreationDto);
 
@@ -257,12 +266,12 @@ class ItemServiceImplUnitTest {
         newItem.setAvailable(itemCreationDto.getAvailable());
 
         when(userService.getUserById(anyLong())).thenReturn(userDto);
-        when(mapper.toUser(any())).thenReturn(user);
-        when(mapper.toItem(any(), any())).thenReturn(newItem);
+        when(userMapper.toUser(any())).thenReturn(user);
+        when(itemMapper.toItem(any(), any())).thenReturn(newItem);
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
         itemCreationDto.setName(newItem.getName());
         when(itemRepository.save(any())).thenReturn(item);
-        when(mapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
+        when(itemMapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
 
         ItemCreationDto actualItemCreationDto = itemService.updateItem(1, 1, itemCreationDto);
 
@@ -272,7 +281,7 @@ class ItemServiceImplUnitTest {
     @Test
     void searchItem() {
         when(itemRepository.search(anyString(), any(Pageable.class))).thenReturn(List.of(item));
-        when(mapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
+        when(itemMapper.toDto(any(Item.class))).thenReturn(itemCreationDto);
 
         List<ItemCreationDto> actualItemCreationDto = itemService.searchItem("name", 0, 10);
 
@@ -286,12 +295,12 @@ class ItemServiceImplUnitTest {
 
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
         when(userService.getUserById(anyLong())).thenReturn(userDto);
-        when(mapper.toUser(any())).thenReturn(user);
+        when(userMapper.toUser(any())).thenReturn(user);
         when(bookingRepository.findByItemIdAndBookerIdAndStatusAndEndBefore(anyLong(), anyLong(), any(), any()))
                 .thenReturn(List.of(booking));
-        when(mapper.toComment(any(), any(), any())).thenReturn(comment);
+        when(commentMapper.toComment(any(), any(), any())).thenReturn(comment);
         when(commentRepository.save(any())).thenReturn(comment);
-        when(mapper.toDto(comment)).thenReturn(commentDto);
+        when(commentMapper.toDto(comment)).thenReturn(commentDto);
 
         CommentDto actualCommentDto = itemService.addComment(user.getId(), item.getId(), new CommentTextDto("text"));
 

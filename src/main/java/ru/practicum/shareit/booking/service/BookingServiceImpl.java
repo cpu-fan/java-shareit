@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingCreationDto;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.model.BookingStatus;
@@ -17,7 +18,6 @@ import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.exceptions.ValidationException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
@@ -40,7 +40,7 @@ public class BookingServiceImpl implements BookingService {
 
     private final UserService userService;
 
-    private final Mapper mapper;
+    private final BookingMapper bookingMapper;
 
     @Override
     public BookingDto createBooking(long userId, BookingCreationDto bookingDto) {
@@ -76,13 +76,13 @@ public class BookingServiceImpl implements BookingService {
         checkItemBookings(bookingDto);
 
         // Устанавливаю статус и сохраняю
-        Booking booking = mapper.toBooking(bookingDto, user, item);
+        Booking booking = bookingMapper.toBooking(bookingDto, user, item);
         booking.setStatus(BookingStatus.WAITING);
         booking = bookingRepository.save(booking);
         log.info("Добавлен запрос на бронирование вещи itemId = " + booking.getItem().getId()
                 + " пользователем userId = " + userId);
 
-        return mapper.toDto(booking);
+        return bookingMapper.toDto(booking);
     }
 
     @Override
@@ -115,7 +115,7 @@ public class BookingServiceImpl implements BookingService {
 
         bookingRepository.save(booking);
         log.info("Бронирование bookingId = " + booking.getId() + " переведено в статус " + booking.getStatus());
-        return mapper.toDto(booking);
+        return bookingMapper.toDto(booking);
     }
 
     @Override
@@ -135,7 +135,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         log.info("Запрошено бронирование bookingId = " + bookingId);
-        return mapper.toDto(booking);
+        return bookingMapper.toDto(booking);
     }
 
     @Override
@@ -176,7 +176,7 @@ public class BookingServiceImpl implements BookingService {
 
             case ALL:
                 return bookings.stream()
-                        .map(mapper::toDto)
+                        .map(bookingMapper::toDto)
                         .collect(Collectors.toList());
 
             default:
@@ -216,7 +216,7 @@ public class BookingServiceImpl implements BookingService {
     private List<BookingDto> getFilteredAndSortBookings(List<Booking> list, Predicate<Booking> predicate) {
         return list.stream()
                 .filter(predicate)
-                .map(mapper::toDto)
+                .map(bookingMapper::toDto)
                 .collect(Collectors.toList());
     }
 }

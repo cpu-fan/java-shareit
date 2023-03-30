@@ -11,13 +11,14 @@ import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemDtoForRequest;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.request.dto.ItemRequestCreatedDto;
 import ru.practicum.shareit.request.dto.ItemRequestCreationDto;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
+import ru.practicum.shareit.request.mapper.ItemRequestMapper;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
@@ -43,7 +44,10 @@ class ItemRequestServiceImplUnitTest {
     private UserService userService;
 
     @Mock
-    private Mapper mapper;
+    private ItemRequestMapper itemRequestMapper;
+
+    @Mock
+    private UserMapper userMapper;
 
     @InjectMocks
     private ItemRequestServiceImpl itemRequestService;
@@ -61,10 +65,10 @@ class ItemRequestServiceImplUnitTest {
                 itemRequestAfterSave.getDescription(), itemRequestAfterSave.getCreated());
 
         when(userService.getUserById(anyLong())).thenReturn(requestorDto);
-        when(mapper.toUser(any())).thenReturn(requestor);
-        when(mapper.toItemRequest(any(), any())).thenReturn(itemRequest);
+        when(userMapper.toUser(any())).thenReturn(requestor);
+        when(itemRequestMapper.toItemRequest(any(), any())).thenReturn(itemRequest);
         when(itemRequestRepository.save(any())).thenReturn(itemRequestAfterSave);
-        when(mapper.toDto(any(ItemRequest.class))).thenReturn(expectedItemRequestDto);
+        when(itemRequestMapper.toDto(any(ItemRequest.class))).thenReturn(expectedItemRequestDto);
 
         ItemRequestCreatedDto actualItemRequestDto = itemRequestService.addRequest(1, itemRequestDto);
 
@@ -93,8 +97,8 @@ class ItemRequestServiceImplUnitTest {
         when(userService.getUserById(anyLong())).thenReturn(new UserDto());
         when(itemRequestRepository.findByRequestorIdOrderByCreatedDesc(anyLong())).thenReturn(List.of(ir));
         when(itemRepository.findByRequestIdIn(anyList())).thenReturn(List.of(item));
-        when(mapper.toItemDtoForReq(any())).thenReturn(itemDto);
-        when(mapper.toItemRequestDto(any(), anyList())).thenReturn(expected);
+        when(itemRequestMapper.toItemDtoForReq(any())).thenReturn(itemDto);
+        when(itemRequestMapper.toItemRequestDto(any(), anyList())).thenReturn(expected);
 
         List<ItemRequestDto> actualItemRequests = itemRequestService.getListOwnRequests(anyLong());
 
@@ -119,9 +123,9 @@ class ItemRequestServiceImplUnitTest {
 
         when(userService.getUserById(anyLong())).thenReturn(new UserDto());
         when(itemRequestRepository.findById(anyLong())).thenReturn(Optional.of(ir));
-        when(mapper.toItemDtoForReq(any())).thenReturn(itemDto);
+        when(itemRequestMapper.toItemDtoForReq(any())).thenReturn(itemDto);
         when(itemRepository.findByRequestId(anyLong())).thenReturn(List.of(item));
-        when(mapper.toItemRequestDto(any(), anyList())).thenReturn(expected);
+        when(itemRequestMapper.toItemRequestDto(any(), anyList())).thenReturn(expected);
 
         ItemRequestDto actualItemRequests = itemRequestService.getRequestById(0, 1);
 
@@ -136,7 +140,7 @@ class ItemRequestServiceImplUnitTest {
         assertThrows(NotFoundException.class, () -> itemRequestService.getRequestById(0, 1));
         verify(itemRequestRepository, never()).findById(anyLong());
         verify(itemRepository, never()).findByRequestIdIn(anyList());
-        verify(mapper, never()).toItemRequestDto(any(), anyList());
+        verify(itemRequestMapper, never()).toItemRequestDto(any(), anyList());
     }
 
     @Test
@@ -146,7 +150,7 @@ class ItemRequestServiceImplUnitTest {
         assertThrows(NotFoundException.class, () -> itemRequestService.getRequestById(0, 1));
         verify(userService, times(1)).getUserById(anyLong());
         verify(itemRepository, never()).findByRequestIdIn(anyList());
-        verify(mapper, never()).toItemRequestDto(any(), anyList());
+        verify(itemRequestMapper, never()).toItemRequestDto(any(), anyList());
     }
 
     @Test
@@ -160,8 +164,8 @@ class ItemRequestServiceImplUnitTest {
         when(userService.getUserById(anyLong())).thenReturn(new UserDto());
         when(itemRequestRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(ir)));
         when(itemRepository.findByRequestIdIn(anyList())).thenReturn(List.of(item));
-        when(mapper.toItemDtoForReq(any())).thenReturn(itemDto);
-        when(mapper.toItemRequestDto(any(), anyList())).thenReturn(expected);
+        when(itemRequestMapper.toItemDtoForReq(any())).thenReturn(itemDto);
+        when(itemRequestMapper.toItemRequestDto(any(), anyList())).thenReturn(expected);
 
         List<ItemRequestDto> actualItemRequests = itemRequestService.getRequestsList(2, 0, 10);
 
@@ -176,7 +180,7 @@ class ItemRequestServiceImplUnitTest {
         assertThrows(NotFoundException.class, () -> itemRequestService.getRequestById(0, 1));
         verify(itemRequestRepository, never()).findAll(any(Pageable.class));
         verify(itemRepository, never()).findByRequestIdIn(anyList());
-        verify(mapper, never()).toItemDtoForReq(any());
-        verify(mapper, never()).toItemRequestDto(any(), anyList());
+        verify(itemRequestMapper, never()).toItemDtoForReq(any());
+        verify(itemRequestMapper, never()).toItemRequestDto(any(), anyList());
     }
 }

@@ -8,12 +8,13 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemDtoForRequest;
-import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.request.dto.ItemRequestCreatedDto;
 import ru.practicum.shareit.request.dto.ItemRequestCreationDto;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
+import ru.practicum.shareit.request.mapper.ItemRequestMapper;
 import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
@@ -33,16 +34,18 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     private final UserService userService;
 
-    private final Mapper mapper;
+    private final ItemRequestMapper itemRequestMapper;
+
+    private final UserMapper userMapper;
 
     @Override
     public ItemRequestCreatedDto addRequest(long requestorId, ItemRequestCreationDto itemRequestDto) {
-        User requestor = mapper.toUser(userService.getUserById(requestorId));
-        ItemRequest itemRequest = mapper.toItemRequest(requestor, itemRequestDto);
+        User requestor = userMapper.toUser(userService.getUserById(requestorId));
+        ItemRequest itemRequest = itemRequestMapper.toItemRequest(requestor, itemRequestDto);
         itemRequest = itemRequestRepository.save(itemRequest);
 
         log.info("Добавлен запрос вещи requestId = " + itemRequest.getId());
-        return mapper.toDto(itemRequest);
+        return itemRequestMapper.toDto(itemRequest);
     }
 
     @Override
@@ -63,11 +66,11 @@ public class ItemRequestServiceImpl implements ItemRequestService {
             throw new NotFoundException(message);
         });
         List<ItemDtoForRequest> items = itemRepository.findByRequestId(itemRequest.getId()).stream()
-                .map(mapper::toItemDtoForReq)
+                .map(itemRequestMapper::toItemDtoForReq)
                 .collect(Collectors.toList());
 
         log.info("Запрошен запрос вещей requestId = " + requestId);
-        return mapper.toItemRequestDto(itemRequest, items);
+        return itemRequestMapper.toItemRequestDto(itemRequest, items);
     }
 
     @Override
@@ -86,12 +89,12 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         Map<Long, List<ItemDtoForRequest>> items = itemRepository.findByRequestIdIn(itemRequests.stream()
                 .map(ItemRequest::getId)
                 .collect(Collectors.toList())).stream()
-                .map(mapper::toItemDtoForReq)
+                .map(itemRequestMapper::toItemDtoForReq)
                 .collect(Collectors.groupingBy(ItemDtoForRequest::getRequestId,
                         Collectors.mapping(i -> i, Collectors.toList())));
 
         return itemRequests.stream()
-                .map(ir -> mapper.toItemRequestDto(ir, items.getOrDefault(ir.getId(), Collections.emptyList())))
+                .map(ir -> itemRequestMapper.toItemRequestDto(ir, items.getOrDefault(ir.getId(), Collections.emptyList())))
                 .collect(Collectors.toList());
     }
 }

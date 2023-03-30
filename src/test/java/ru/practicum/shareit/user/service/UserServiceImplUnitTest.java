@@ -9,9 +9,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.practicum.shareit.exceptions.NotFoundException;
-import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
@@ -28,18 +28,14 @@ class UserServiceImplUnitTest {
 
     @InjectMocks
     private UserServiceImpl userService;
-
     @Mock
     private UserRepository userRepository;
-
     @Mock
-    private Mapper mapper;
-
+    private UserMapper userMapper;
     @Captor
     ArgumentCaptor<User> userArgumentCaptor;
 
     private User user;
-
     private UserDto userDto;
 
     @BeforeEach
@@ -51,7 +47,7 @@ class UserServiceImplUnitTest {
     @Test
     void getAllUsers_whenUserIsExists_thenReturnListOfUsers() {
         when(userRepository.findAll()).thenReturn(List.of(user));
-        when(mapper.toDto(any(User.class))).thenReturn(userDto);
+        when(userMapper.toDto(any(User.class))).thenReturn(userDto);
 
         List<UserDto> actualUsers = userService.getAllUsers();
 
@@ -68,7 +64,7 @@ class UserServiceImplUnitTest {
     @Test
     void getUserById_whenUserFound_thenReturnUser() {
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
-        when(mapper.toDto(any(User.class))).thenReturn(userDto);
+        when(userMapper.toDto(any(User.class))).thenReturn(userDto);
 
         UserDto actualUserDto = userService.getUserById(anyLong());
 
@@ -80,7 +76,7 @@ class UserServiceImplUnitTest {
         when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> userService.getUserById(anyLong()));
-        verify(mapper, never()).toDto(any(User.class));
+        verify(userMapper, never()).toDto(any(User.class));
     }
 
     @Test
@@ -88,9 +84,9 @@ class UserServiceImplUnitTest {
         // Я так понимаю, что негативные сценарии актуальны для этого метода только в интеграционных тестах?
         // Имею в виду проверки на валидацию которые осуществляются на уровне контроллера и на уникальность почты на уровне БД.
         // Или же лучше добавить негативные сценарии с помощью моков?
-        when(mapper.toUser(any())).thenReturn(user);
+        when(userMapper.toUser(any())).thenReturn(user);
         when(userRepository.save(any())).thenReturn(user);
-        when(mapper.toDto(any(User.class))).thenReturn(userDto);
+        when(userMapper.toDto(any(User.class))).thenReturn(userDto);
 
         UserDto actualUserDto = userService.createUser(userDto);
 
@@ -102,12 +98,12 @@ class UserServiceImplUnitTest {
         User newUser = new User();
         newUser.setName("updated name");
 
-        when(mapper.toUser(any())).thenReturn(newUser);
+        when(userMapper.toUser(any())).thenReturn(newUser);
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
         user.setName(newUser.getName());
         when(userRepository.save(any())).thenReturn(user);
 
-        userService.updateUser(1, mapper.toDto(newUser));
+        userService.updateUser(1, userMapper.toDto(newUser));
 
         verify(userRepository).save(userArgumentCaptor.capture());
         User savedUser = userArgumentCaptor.getValue();
@@ -121,12 +117,12 @@ class UserServiceImplUnitTest {
         User newUser = new User();
         newUser.setName("updated@email.com");
 
-        when(mapper.toUser(any())).thenReturn(newUser);
+        when(userMapper.toUser(any())).thenReturn(newUser);
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
         user.setEmail(newUser.getEmail());
         when(userRepository.save(any())).thenReturn(user);
 
-        userService.updateUser(1, mapper.toDto(newUser));
+        userService.updateUser(1, userMapper.toDto(newUser));
 
         verify(userRepository).save(userArgumentCaptor.capture());
         User savedUser = userArgumentCaptor.getValue();
@@ -141,7 +137,7 @@ class UserServiceImplUnitTest {
 
         assertThrows(NotFoundException.class, () -> userService.updateUser(1, userDto));
         verify(userRepository, never()).save(any());
-        verify(mapper, never()).toDto(any(User.class));
+        verify(userMapper, never()).toDto(any(User.class));
     }
 
     @Test
