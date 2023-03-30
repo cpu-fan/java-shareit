@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemDtoForRequest;
-import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.request.dao.ItemRequestRepository;
 import ru.practicum.shareit.request.dto.ItemRequestCreatedDto;
@@ -18,7 +17,9 @@ import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -82,15 +83,15 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     }
 
     private List<ItemRequestDto> getItemRequestsWithItems(List<ItemRequest> itemRequests) {
-        List<Item> items = itemRepository.findByRequestIdIn(itemRequests.stream()
+        Map<Long, List<ItemDtoForRequest>> items = itemRepository.findByRequestIdIn(itemRequests.stream()
                 .map(ItemRequest::getId)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList())).stream()
+                .map(mapper::toItemDtoForReq)
+                .collect(Collectors.groupingBy(ItemDtoForRequest::getRequestId,
+                        Collectors.mapping(i -> i, Collectors.toList())));
 
         return itemRequests.stream()
-                .map(ir -> mapper.toItemRequestDto(ir, items.stream()
-                        .filter(item -> item.getRequest().getId() == ir.getId())
-                        .map(mapper::toItemDtoForReq)
-                        .collect(Collectors.toList())))
+                .map(ir -> mapper.toItemRequestDto(ir, items.getOrDefault(ir.getId(), Collections.emptyList())))
                 .collect(Collectors.toList());
     }
 }
