@@ -4,15 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exceptions.NotFoundException;
-import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.utils.Mapper;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,44 +22,43 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
-    private final Mapper mapper;
+    private final UserMapper userMapper;
 
     @Override
     public List<UserDto> getAllUsers() {
         log.info("Запрошен список пользователей");
         return new ArrayList<>(userRepository.findAll()).stream()
-                .map(mapper::toDto)
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public UserDto getUserById(long userId) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isEmpty()) {
+        User user = userRepository.findById(userId).orElseThrow(() -> {
             String message = "Пользователь с id = " + userId + " не найден";
             log.error(message);
             throw new NotFoundException(message);
-        }
+        });
         log.info("Запрошен пользователь с id = " + userId);
-        return mapper.toDto(user.get());
+        return userMapper.toDto(user);
     }
 
     @Override
     public UserDto createUser(UserDto userDto) {
-        User user = mapper.toUser(userDto);
+        User user = userMapper.toUser(userDto);
         user = userRepository.save(user);
         log.info("Зарегистрирован новый пользователь " + user);
-        return mapper.toDto(user);
+        return userMapper.toDto(user);
     }
 
     @Override
     public UserDto updateUser(long userId, UserDto userDto) {
-        User user = mapper.toUser(userDto);
         User updatingUser = userRepository.findById(userId).orElseThrow(() -> {
             String message = "Пользователь с id = " + userId + " не найден";
             log.error(message);
             throw new NotFoundException(message);
         });
+        User user = userMapper.toUser(userDto);
 
         // Конвертирую Item в Map и отбираю только те поля-ключи, значение у которых != null
         Mapper mapper = new Mapper();
@@ -75,7 +74,7 @@ public class UserServiceImpl implements UserService {
 
         log.info("Обновлена информация о пользователе " + updatingUser);
         updatingUser = userRepository.save(updatingUser);
-        return mapper.toDto(updatingUser);
+        return userMapper.toDto(updatingUser);
     }
 
     @Override

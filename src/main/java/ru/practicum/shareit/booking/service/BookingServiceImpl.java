@@ -2,10 +2,14 @@ package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingCreationDto;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingState;
 import ru.practicum.shareit.booking.model.BookingStatus;
@@ -14,15 +18,12 @@ import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.exceptions.ValidationException;
 import ru.practicum.shareit.item.dao.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.mapper.Mapper;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -39,7 +40,7 @@ public class BookingServiceImpl implements BookingService {
 
     private final UserService userService;
 
-    private final Mapper mapper;
+    private final BookingMapper bookingMapper;
 
     @Override
     public BookingDto createBooking(long userId, BookingCreationDto bookingDto) {
@@ -75,13 +76,13 @@ public class BookingServiceImpl implements BookingService {
         checkItemBookings(bookingDto);
 
         // Устанавливаю статус и сохраняю
-        Booking booking = mapper.toBooking(bookingDto, user, item);
+        Booking booking = bookingMapper.toBooking(bookingDto, user, item);
         booking.setStatus(BookingStatus.WAITING);
         booking = bookingRepository.save(booking);
         log.info("Добавлен запрос на бронирование вещи itemId = " + booking.getItem().getId()
                 + " пользователем userId = " + userId);
 
-        return mapper.toDto(booking);
+        return bookingMapper.toDto(booking);
     }
 
     @Override
@@ -114,20 +115,19 @@ public class BookingServiceImpl implements BookingService {
 
         bookingRepository.save(booking);
         log.info("Бронирование bookingId = " + booking.getId() + " переведено в статус " + booking.getStatus());
-        return mapper.toDto(booking);
+        return bookingMapper.toDto(booking);
     }
 
     @Override
     public BookingDto getBookingById(long userId, long bookingId) {
-        Optional<Booking> booking = bookingRepository.findById(bookingId);
-        if (booking.isEmpty()) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> {
             String message = "Бронирование bookingId = " + bookingId + " не найдено";
             log.error(message);
             throw new NotFoundException(message);
-        }
+        });
 
-        long bookerId = booking.get().getBooker().getId();
-        long ownerId = booking.get().getItem().getOwner().getId();
+        long bookerId = booking.getBooker().getId();
+        long ownerId = booking.getItem().getOwner().getId();
         if (!(userId == bookerId || userId == ownerId)) {
             String message = "У пользователя userId = " + userId + " не найдено бронирования bookingId = " + bookingId;
             log.error(message);
@@ -135,19 +135,19 @@ public class BookingServiceImpl implements BookingService {
         }
 
         log.info("Запрошено бронирование bookingId = " + bookingId);
-        return mapper.toDto(booking.get());
+        return bookingMapper.toDto(booking);
     }
 
     @Override
-    public List<BookingDto> getAllBookingsByUser(long userId, BookingState state, boolean isOwner) {
-        userService.getUserById(userId); // если такого юзера нет, то 404
+    public List<BookingDto> getAllBookingsByUser(long userId, BookingState state, int from, int size, boolean isOwner) {
+        userService.getUserById(userId);
         List<Booking> bookings;
-        Comparator<Booking> comparator = Comparator.comparing(Booking::getStart).reversed();
+        Pageable pageable = PageRequest.of(from / size, size, Sort.by("start").descending());
 
         if (isOwner) {
-            bookings = bookingRepository.findByOwnerId(userId);
+            bookings = bookingRepository.findByOwnerId(userId, pageable);
         } else {
-            bookings = bookingRepository.findByBookerId(userId);
+            bookings = bookingRepository.findByBookerId(userId, pageable);
         }
 
         if (state == null) {
@@ -159,27 +159,24 @@ public class BookingServiceImpl implements BookingService {
             case REJECTED:
                 String strState = state.toString();
                 Predicate<Booking> statusPredicate = b -> b.getStatus().toString().equals(strState);
-                return getFilteredAndSortBookings(bookings, statusPredicate, comparator);
+                return getFilteredAndSortBookings(bookings, statusPredicate);
 
             case PAST:
                 Predicate<Booking> pastPredicate = b -> b.getEnd().isBefore(LocalDateTime.now());
-                return getFilteredAndSortBookings(bookings, pastPredicate, comparator);
+                return getFilteredAndSortBookings(bookings, pastPredicate);
 
             case CURRENT:
                 Predicate<Booking> currentPredicate = b -> b.getStart().isBefore(LocalDateTime.now())
                         && b.getEnd().isAfter(LocalDateTime.now());
-                Comparator<Booking> comparator2 = Comparator.comparing(Booking::getId);
-//                comparator = comparator.reversed();
-                return getFilteredAndSortBookings(bookings, currentPredicate, comparator2);
+                return getFilteredAndSortBookings(bookings, currentPredicate);
 
             case FUTURE:
                 Predicate<Booking> futurePredicate = b -> b.getStart().isAfter(LocalDateTime.now());
-                return getFilteredAndSortBookings(bookings, futurePredicate, comparator);
+                return getFilteredAndSortBookings(bookings, futurePredicate);
 
             case ALL:
                 return bookings.stream()
-                        .sorted(Comparator.comparing(Booking::getStart).reversed())
-                        .map(mapper::toDto)
+                        .map(bookingMapper::toDto)
                         .collect(Collectors.toList());
 
             default:
@@ -193,7 +190,7 @@ public class BookingServiceImpl implements BookingService {
         long itemId = booking.getItemId();
         List<Booking> existingBookings = bookingRepository.findByItemId(itemId);
 
-        // Если бронирование имеется даты пересекаются, то выбрасываем ошибку
+        // Если бронирование имеется и даты пересекаются, то выбрасываем ошибку
         if (existingBookings != null) {
             LocalDateTime startNewBooking = booking.getStart();
             LocalDateTime endNewBooking = booking.getEnd();
@@ -216,14 +213,10 @@ public class BookingServiceImpl implements BookingService {
         return start1.isBefore(end2) && start2.isBefore(end1);
     }
 
-    private List<BookingDto> getFilteredAndSortBookings(List<Booking> list,
-                                                        Predicate<Booking> predicate,
-                                                        Comparator<Booking> comparator) {
+    private List<BookingDto> getFilteredAndSortBookings(List<Booking> list, Predicate<Booking> predicate) {
         return list.stream()
                 .filter(predicate)
-                .sorted(comparator)
-//                .sorted(Comparator.comparing(Booking::getStart).reversed())
-                .map(mapper::toDto)
+                .map(bookingMapper::toDto)
                 .collect(Collectors.toList());
     }
 }
