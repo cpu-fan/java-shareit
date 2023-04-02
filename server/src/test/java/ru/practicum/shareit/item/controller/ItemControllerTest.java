@@ -98,34 +98,6 @@ class ItemControllerTest {
 
     @Test
     @SneakyThrows
-    void getAllItems_whenFromParamIsLessThanZero_whenReturnBadRequest() {
-        mockMvc.perform(get("/items")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, user.getId())
-                        .param("from", "-1")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemService, never()).getOwnerItems(anyLong(), anyInt(), anyInt());
-    }
-
-    @Test
-    @SneakyThrows
-    void getAllItems_whenSizeParamIsNotPositive_whenReturnBadRequest() {
-        mockMvc.perform(get("/items")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, user.getId())
-                        .param("from", "0")
-                        .param("size", "0"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemService, never()).getOwnerItems(anyLong(), anyInt(), anyInt());
-    }
-
-    @Test
-    @SneakyThrows
     void getItemById() {
         when(itemService.getItemById(anyLong(), anyLong())).thenReturn(itemDto);
 
@@ -184,51 +156,6 @@ class ItemControllerTest {
 
     @Test
     @SneakyThrows
-    void createItem_whenNameIsBlank_thenReturnBadRequest() {
-        itemCreationDtoReq.setName("");
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/items")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, owner.getId())
-                        .content(objectMapper.writeValueAsString(itemCreationDtoReq)))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemService, never()).createItem(anyLong(), any());
-    }
-
-    @Test
-    @SneakyThrows
-    void createItem_whenDescriptionIsBlank_thenReturnBadRequest() {
-        itemCreationDtoReq.setDescription("");
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/items")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, owner.getId())
-                        .content(objectMapper.writeValueAsString(itemCreationDtoReq)))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemService, never()).createItem(anyLong(), any());
-    }
-
-    @Test
-    @SneakyThrows
-    void createItem_whenAvailableIsNull_thenReturnBadRequest() {
-        itemCreationDtoReq.setAvailable(null);
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/items")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, owner.getId())
-                        .content(objectMapper.writeValueAsString(itemCreationDtoReq)))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemService, never()).createItem(anyLong(), any());
-    }
-
-    @Test
-    @SneakyThrows
     void updateItem_whenUpdatedName_thenReturnItemWithUpdatedName() {
         String newName = "new name for itemId " + item.getId();
         itemCreationDtoReq.setName(newName);
@@ -269,36 +196,6 @@ class ItemControllerTest {
 
     @Test
     @SneakyThrows
-    void searchItem_whenFromParamIsLessThanZero_whenReturnBadRequest() {
-        mockMvc.perform(get("/items/search")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, user.getId())
-                        .param("text", "item name")
-                        .param("from", "-1")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemService, never()).searchItem("item name", -1, 10);
-    }
-
-    @Test
-    @SneakyThrows
-    void searchItem_whenSizeParamIsNotPositive_whenReturnBadRequest() {
-        mockMvc.perform(get("/items/search")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, user.getId())
-                        .param("text", "item name")
-                        .param("from", "0")
-                        .param("size", "0"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemService, never()).searchItem("item name", 0, 0);
-    }
-
-    @Test
-    @SneakyThrows
     void addComment() {
         CommentTextDto commentTextDto = new CommentTextDto(comment.getText());
         when(itemService.addComment(anyLong(), anyLong(), any())).thenReturn(commentDtoResp);
@@ -314,20 +211,5 @@ class ItemControllerTest {
                 .andExpect(jsonPath("$.authorName").value(comment.getAuthor().getName()));
 
         verify(itemService, times(1)).addComment(booker.getId(), item.getId(), commentTextDto);
-    }
-
-    @Test
-    @SneakyThrows
-    void addComment_whenCommentTextIsBlank_thenReturnBadRequest() {
-        CommentTextDto commentTextDto = new CommentTextDto("");
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/items/" + item.getId() + "/comment")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, booker.getId())
-                        .content(objectMapper.writeValueAsString(commentTextDto)))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemService, never()).addComment(booker.getId(), item.getId(), commentTextDto);
     }
 }

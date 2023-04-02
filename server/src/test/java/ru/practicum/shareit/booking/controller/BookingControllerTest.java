@@ -91,36 +91,6 @@ class BookingControllerTest {
 
     @Test
     @SneakyThrows
-    void createBooking_whenStartIsPast_whenReturnBadRequest() {
-        bookingCreationDto.setStart(LocalDateTime.now().minusDays(1));
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/bookings")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, booker.getId())
-                        .content(objectMapper.writeValueAsString(bookingCreationDto)))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(bookingService, never()).createBooking(anyLong(), any());
-    }
-
-    @Test
-    @SneakyThrows
-    void createBooking_whenEndIsPast_whenReturnBadRequest() {
-        bookingCreationDto.setEnd(LocalDateTime.now().minusDays(1));
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/bookings")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, booker.getId())
-                        .content(objectMapper.writeValueAsString(bookingCreationDto)))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(bookingService, never()).createBooking(anyLong(), any());
-    }
-
-    @Test
-    @SneakyThrows
     void considerationOfRequest() {
         bookingDto.setStatus(BookingStatus.APPROVED);
         booking.setStatus(BookingStatus.APPROVED);
@@ -192,49 +162,6 @@ class BookingControllerTest {
 
     @Test
     @SneakyThrows
-    void getAllBookingsByUser_whenParamsIsNotPresent_thenUseDefault() {
-        mockMvc.perform(get("/bookings")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, booker.getId()))
-                .andDo(print())
-                .andExpect(status().isOk());
-
-        verify(bookingService, times(1)).getAllBookingsByUser(booker.getId(), null,
-                0, 10, false);
-    }
-
-    @Test
-    @SneakyThrows
-    void getAllBookingsByUser_whenFromParamIsLessThanZero_whenReturnBadRequest() {
-        mockMvc.perform(get("/bookings")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, booker.getId())
-                        .param("state", "ALL")
-                        .param("from", "-1")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(bookingService, never()).getAllBookingsByUser(anyLong(), any(), anyInt(), anyInt(), anyBoolean());
-    }
-
-    @Test
-    @SneakyThrows
-    void getAllBookingsByUser_whenSizeParamIsNotPositive_whenReturnBadRequest() {
-        mockMvc.perform(get("/bookings")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, booker.getId())
-                        .param("state", "ALL")
-                        .param("from", "0")
-                        .param("size", "0"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(bookingService, never()).getAllBookingsByUser(anyLong(), any(), anyInt(), anyInt(), anyBoolean());
-    }
-
-    @Test
-    @SneakyThrows
     void getAllBookingsByOwner() {
         when(bookingService.getAllBookingsByUser(anyLong(), any(), anyInt(), anyInt(), anyBoolean()))
                 .thenReturn(List.of(bookingDto));
@@ -252,48 +179,5 @@ class BookingControllerTest {
                 .andExpect(jsonPath("$[0].booker.id").value(booking.getBooker().getId()))
                 .andExpect(jsonPath("$[0].item.id").value(booking.getItem().getId()))
                 .andExpect(jsonPath("$[0].item.name").value(booking.getItem().getName()));
-    }
-
-    @Test
-    @SneakyThrows
-    void getAllBookingsByOwner_whenParamsIsNotPresent_thenUseDefault() {
-        mockMvc.perform(get("/bookings/owner")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, owner.getId()))
-                .andDo(print())
-                .andExpect(status().isOk());
-
-        verify(bookingService, times(1)).getAllBookingsByUser(owner.getId(), null,
-                0, 10, true);
-    }
-
-    @Test
-    @SneakyThrows
-    void getAllBookingsByUser_whenIsOwnerFromParamIsLessThanZero_whenReturnBadRequest() {
-        mockMvc.perform(get("/bookings/owner")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, booker.getId())
-                        .param("state", "ALL")
-                        .param("from", "-1")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(bookingService, never()).getAllBookingsByUser(anyLong(), any(), anyInt(), anyInt(), anyBoolean());
-    }
-
-    @Test
-    @SneakyThrows
-    void getAllBookingsByUser_whenIsOwnerSizeParamIsNotPositive_whenReturnBadRequest() {
-        mockMvc.perform(get("/bookings/owner")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, booker.getId())
-                        .param("state", "ALL")
-                        .param("from", "0")
-                        .param("size", "0"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(bookingService, never()).getAllBookingsByUser(anyLong(), any(), anyInt(), anyInt(), anyBoolean());
     }
 }

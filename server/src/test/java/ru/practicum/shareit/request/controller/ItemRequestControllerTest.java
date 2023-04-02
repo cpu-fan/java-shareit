@@ -82,21 +82,6 @@ class ItemRequestControllerTest {
 
     @Test
     @SneakyThrows
-    void addRequest_whenDescriptionIsBlank_thenReturnBadRequest() {
-        itemRequestCreationDto.setDescription("");
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/requests")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, requestor.getId())
-                        .content(objectMapper.writeValueAsString(itemRequestCreationDto)))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemRequestService, never()).addRequest(anyLong(), any());
-    }
-
-    @Test
-    @SneakyThrows
     void getListOwnRequests() {
         when(itemRequestService.getListOwnRequests(anyLong())).thenReturn(List.of(itemRequestDto));
 
@@ -155,33 +140,5 @@ class ItemRequestControllerTest {
                 .andExpect(jsonPath("$[0].items[0].description").value(item.getDescription()))
                 .andExpect(jsonPath("$[0].items[0].available").value(item.getAvailable()))
                 .andExpect(jsonPath("$[0].items[0].requestId").value(item.getRequest().getId()));
-    }
-
-    @Test
-    @SneakyThrows
-    void getRequestsList_whenFromParamIsLessThanZero_whenReturnBadRequest() {
-        mockMvc.perform(get("/requests/all")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, user.getId())
-                        .param("from", "-1")
-                        .param("size", "10"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemRequestService, never()).getRequestsList(anyLong(), anyInt(), anyInt());
-    }
-
-    @Test
-    @SneakyThrows
-    void getRequestsList_whenSizeParamIsNotPositive_whenReturnBadRequest() {
-        mockMvc.perform(get("/requests/all")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header(HEADER_NAME, user.getId())
-                        .param("from", "0")
-                        .param("size", "0"))
-                .andDo(print())
-                .andExpect(status().isBadRequest());
-
-        verify(itemRequestService, never()).getRequestsList(anyLong(), anyInt(), anyInt());
     }
 }
