@@ -13,8 +13,6 @@ import ru.practicum.shareit.exceptions.ForbiddenException;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.exceptions.ValidationException;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.ConstraintViolationException;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -56,18 +54,6 @@ public class ErrorHandler {
         String errors = Objects.requireNonNull(e.getValue()).toString();
         log.error("Валидация не пройдена: " + errors);
         return new ErrorResponse("Unknown state: " + errors);
-    }
-
-    // ConstraintViolationException
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleMethodArgumentNotValidException(final ConstraintViolationException e) {
-        String message = e.getConstraintViolations().stream()
-                .map(ConstraintViolation::getMessage)
-                .findAny()
-                .orElse(" валидация не пройдена по причине - " + e.getMessage());
-        log.error(message);
-        return new ErrorResponse(message);
     }
 
     @ExceptionHandler
